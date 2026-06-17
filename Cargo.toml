@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "apps/tauri-app/src-tauri",
+    "crates/voiceflow-desktop"
+]
+resolver = "2"

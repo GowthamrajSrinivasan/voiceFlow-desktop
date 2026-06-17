@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VoiceFlow</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <!-- Overlay View -->
+    <div id="overlay-container" style="display: none;">
+      <div id="transcript-box">
+        <span id="transcript-text">Listening...</span>
+        <button id="stop-btn" style="display: none;">Stop</button>
+      </div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settings-container" style="display: none;">
+      <div class="settings-header">
+        <h1>VoiceFlow Settings</h1>
+      </div>
+      
+      <div class="settings-tabs">
+        <button class="tab-btn active" data-tab="general">General</button>
+        <button class="tab-btn" data-tab="dictation">Dictation</button>
+        <button class="tab-btn" data-tab="injection">Injection</button>
+        <button class="tab-btn" data-tab="vocabulary">Vocabulary</button>
+      </div>
+      
+      <div class="settings-content">
+        <!-- General Tab -->
+        <div class="tab-content active" id="general-tab">
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Launch at Login</span>
+                <span class="settings-desc">Start VoiceFlow automatically when you log in</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="launch-at-login">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Overlay Enabled</span>
+                <span class="settings-desc">Show transcription overlay bar at the bottom</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="overlay-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Theme</span>
+                <span class="settings-desc">Choose your preferred style</span>
+              </div>
+              <select id="theme">
+                <option value="dark">Dark Theme</option>
+                <option value="light">Light Theme</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Dictation Tab -->
+        <div class="tab-content" id="dictation-tab">
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Dictation Hotkey</span>
+                <span class="settings-desc">Global shortcut to start/stop dictation</span>
+              </div>
+              <input type="text" id="hotkey" readonly disabled value="Alt+Space">
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Primary Language</span>
+                <span class="settings-desc">Whisper transcription language model</span>
+              </div>
+              <select id="language">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Injection Tab -->
+        <div class="tab-content" id="injection-tab">
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Auto Paste</span>
+                <span class="settings-desc">Automatically inject transcript into focused apps</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="auto-paste">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Clipboard Fallback</span>
+                <span class="settings-desc">Copy to clipboard if injection target loses focus</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="clipboard-fallback">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-title">Show Notifications</span>
+                <span class="settings-desc">Display error toasts and status updates</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="show-notifications">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Vocabulary Tab -->
+        <div class="tab-content" id="vocabulary-tab">
+          <div class="stat-box">
+            <div class="settings-label">
+              <span class="settings-title">Custom Vocabulary Terms</span>
+              <span class="settings-desc">Vocabulary management panel (coming in Phase 3)</span>
+            </div>
+            <span class="stat-value" id="vocab-count-val">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="settings-footer">
+        <span class="save-status" id="save-status">✓ Settings saved successfully</span>
+        <button class="btn-primary" id="save-btn">Save Changes</button>
+      </div>
+    </div>
+  </body>
+</html>

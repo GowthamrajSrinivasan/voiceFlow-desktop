@@ -1,0 +1,8 @@
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/serde_with_macros-cb0c869a9ff963a3.d: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/apply.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lazy_bool.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/utils.rs
+
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/libserde_with_macros-cb0c869a9ff963a3.dylib: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/apply.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lazy_bool.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/utils.rs
+
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lib.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/apply.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/lazy_bool.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.21.0/src/utils.rs:

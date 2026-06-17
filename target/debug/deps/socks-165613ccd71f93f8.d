@@ -1,0 +1,10 @@
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/socks-165613ccd71f93f8.d: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v4.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v5.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/writev.rs
+
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/libsocks-165613ccd71f93f8.rlib: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v4.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v5.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/writev.rs
+
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/libsocks-165613ccd71f93f8.rmeta: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v4.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v5.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/writev.rs
+
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/lib.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v4.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/v5.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socks-0.3.4/src/writev.rs:

@@ -1,0 +1,12 @@
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/serde-492d1493b94b8eea.d: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/serde-fd8d8320745a88da/out/private.rs
+
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/deps/libserde-492d1493b94b8eea.rmeta: /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/serde-fd8d8320745a88da/out/private.rs
+
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/gowthamrajsrinivasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/serde-fd8d8320745a88da/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/serde-fd8d8320745a88da/out

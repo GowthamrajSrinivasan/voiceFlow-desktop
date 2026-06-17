@@ -1,0 +1,64 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  color: #fff;
+  background-color: transparent;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  background: transparent !important;
+  overflow: hidden;
+}
+
+#overlay-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+#transcript-box {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  max-width: 90%;
+  text-align: center;
+}
+
+#transcript-text {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #e0e0e0;
+}
+
+/* Add an active listening animation class */
+.listening #transcript-text {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  margin-right: 12px;
+}
+
+#stop-btn {
+  background: rgba(255, 60, 60, 0.8);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  vertical-align: middle;
+}
+
+#stop-btn:hover {
+  background: rgba(255, 80, 80, 1);
+}

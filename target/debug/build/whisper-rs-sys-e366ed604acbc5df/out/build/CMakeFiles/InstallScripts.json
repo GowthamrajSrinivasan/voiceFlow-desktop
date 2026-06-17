@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/cmake_install.cmake",
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/ggml/cmake_install.cmake",
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/ggml/src/cmake_install.cmake",
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/ggml/src/ggml-cpu/cmake_install.cmake",
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/ggml/src/ggml-blas/cmake_install.cmake",
+		"/Users/gowthamrajsrinivasan/Documents/Projects/voiceflow-desktop/target/debug/build/whisper-rs-sys-e366ed604acbc5df/out/build/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

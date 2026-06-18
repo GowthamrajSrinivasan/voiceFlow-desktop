@@ -1,18 +1,20 @@
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use std::time::Duration;
 use std::thread;
 use std::sync::{Arc, Mutex};
-use global_hotkey::GlobalHotKeyEvent;
-use voiceflow_core::hotkey::VoiceFlowHotKeyManager;
-use voiceflow_core::audio_capture::AudioCapture;
-use voiceflow_core::stt::{SpeechRecognizer, WhisperCppRecognizer};
-use voiceflow_core::pipeline::vocabulary::{VocabularyEngine, VocabularyItem};
-use voiceflow_core::pipeline::formatting::FormattingEngine;
-use voiceflow_core::injection::get_injector;
-use tauri::Manager;
+
+
 use voiceflow_shared::config::settings::AppSettings;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
+
+use voiceflow_core::{VoiceFlow, RuntimeProfile, VoiceFlowEvent};
+use voiceflow_desktop_hotkeys::{VoiceFlowHotKeyManager, GlobalHotKeyEvent, HotKeyState};
+use voiceflow_desktop_text_injection::get_injector;
+
+use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_autostart::ManagerExt;
+use tauri_plugin_notification::NotificationExt;
 
 struct AppStatus {
     pub is_paused: Mutex<bool>,
@@ -29,20 +31,38 @@ fn get_settings() -> AppSettings {
 }
 
 #[tauri::command]
-fn save_settings(settings: AppSettings) -> Result<(), String> {
-    settings.save().map_err(|e| e.to_string())
+fn save_settings(settings: AppSettings, app_handle: tauri::AppHandle) -> Result<(), String> {
+    // 1. Save to disk
+    settings.save().map_err(|e| e.to_string())?;
+
+    // 2. Update Hotkey
+    let hotkey_manager = app_handle.state::<Arc<Mutex<VoiceFlowHotKeyManager>>>();
+    if let Err(e) = hotkey_manager.lock().unwrap().update_main_hotkey(&settings.hotkey) {
+        eprintln!("Failed to update hotkey dynamically: {}", e);
+    }
+
+    // 3. Update Autostart
+    let autostart_manager = app_handle.autolaunch();
+    if settings.launch_at_login {
+        let _ = autostart_manager.enable();
+    } else {
+        let _ = autostart_manager.disable();
+    }
+
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--silently"])))
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![stop_listening, get_settings, save_settings])
         .setup(|app| {
             let app_handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("no main window");
             
-            // Intercept settings window close to hide it (keep running in background)
             let settings_window = app.get_webview_window("settings").expect("no settings window");
             let settings_window_clone = settings_window.clone();
             settings_window.on_window_event(move |event| {
@@ -52,12 +72,11 @@ pub fn run() {
                 }
             });
 
-            // Initialize AppStatus state (to track pause/resume dictation)
             app.manage(AppStatus {
                 is_paused: Mutex::new(false),
             });
 
-            // Setup Tray Menu
+            // Tray menu setup
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let settings_i = MenuItem::with_id(app, "settings", "Settings...", true, None::<&str>)?;
             let pause_i = MenuItem::with_id(app, "pause_toggle", "Pause Dictation", true, None::<&str>)?;
@@ -71,9 +90,7 @@ pub fn run() {
                 .icon(tray_icon)
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
-                    "quit" => {
-                        app.exit(0);
-                    }
+                    "quit" => app.exit(0),
                     "settings" => {
                         if let Some(settings_window) = app.get_webview_window("settings") {
                             let _ = settings_window.show();
@@ -84,216 +101,158 @@ pub fn run() {
                         let state = app.state::<AppStatus>();
                         let mut is_paused = state.is_paused.lock().unwrap();
                         *is_paused = !*is_paused;
-                        
                         let text = if *is_paused { "Resume Dictation" } else { "Pause Dictation" };
                         let _ = pause_i_clone.set_text(text);
-                    }
-                    "about" => {
-                        let app_version = env!("CARGO_PKG_VERSION");
-                        let model_path = "/Users/gowthamrajsrinivasan/Documents/Projects/Flow/models/ggml-small.en.bin";
-                        let msg = format!("VoiceFlow v{}\nModel: {}\nRAM: ~500MB (Whisper small.en)", app_version, model_path);
-                        let cmd = format!("display dialog \"{}\" with title \"About VoiceFlow\" buttons {{\"OK\"}} default button \"OK\" with icon note", msg);
-                        let _ = std::process::Command::new("osascript")
-                            .arg("-e")
-                            .arg(&cmd)
-                            .spawn();
                     }
                     _ => {}
                 })
                 .build(app)?;
 
-            // Initialize Hotkey Manager
-            let hotkey_manager = VoiceFlowHotKeyManager::new().expect("Failed to init hotkey manager");
-            app.manage(hotkey_manager);
+            // Hotkey setup
+            let initial_settings = AppSettings::load();
+            let hotkey_manager = VoiceFlowHotKeyManager::new(&initial_settings.hotkey).unwrap_or_else(|_| {
+                eprintln!("Failed to init hotkey manager with custom hotkey, falling back to Alt+Space");
+                VoiceFlowHotKeyManager::new("Alt+Space").unwrap()
+            });
+            let hotkey_manager_arc = Arc::new(Mutex::new(hotkey_manager));
+            app.manage(hotkey_manager_arc.clone());
             
-            // UI Stop Channel
-            let (stop_tx, stop_rx) = std::sync::mpsc::channel::<()>();
+            let (stop_tx, _stop_rx) = std::sync::mpsc::channel::<()>();
             app.manage(stop_tx);
 
-            // Initialize Engines
-            let model_path = "/Users/gowthamrajsrinivasan/Documents/Projects/Flow/models/ggml-small.en.bin";
-            let whisper_recognizer = Arc::new(Mutex::new(
-                WhisperCppRecognizer::new(model_path).expect("Failed to load Whisper model")
-            ));
+            // Core Engine setup
+            #[cfg(target_os = "macos")]
+            let profile = RuntimeProfile::DesktopMac;
+            #[cfg(target_os = "windows")]
+            let profile = RuntimeProfile::DesktopWindows;
+            #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+            let profile = RuntimeProfile::DesktopMac; // fallback
 
+            let mut engine = VoiceFlow::new(profile);
+            let event_receiver = engine.subscribe();
+
+            // Store engine behind arc mutex if we need to call it from other threads
+            let engine = Arc::new(Mutex::new(engine));
+            let engine_clone = Arc::clone(&engine);
+
+            // Trigger the background model prefetch 5s after startup
+            engine.lock().unwrap().prefetch_model();
+
+            // Hotkey Receiver Thread
             let receiver = GlobalHotKeyEvent::receiver();
-
+            let hotkey_manager_clone = Arc::clone(&hotkey_manager_arc);
             thread::spawn(move || {
-                let vocab_items = vec![
-                    VocabularyItem {
-                        canonical: "Requill".to_string(),
-                        aliases: vec!["Requel".to_string(), "Requil".to_string(), "Re Quill".to_string()],
-                    }
-                ];
-                let vocab_engine = VocabularyEngine::new(vocab_items);
-                let format_engine = FormattingEngine::new();
-                let mut injector = get_injector().expect("Failed to initialize text injector");
-
-                let hotkey_manager = app_handle.state::<VoiceFlowHotKeyManager>();
-                let main_id = hotkey_manager.main_hotkey_id();
-                let cancel_id = hotkey_manager.cancel_hotkey_id();
-
-                let mut is_recording = false;
-                let mut audio_capture: Option<AudioCapture> = None;
-                let mut partial_display_text = String::new();
-                let mut last_partial_time = std::time::Instant::now();
-
                 loop {
-                    let mut should_toggle = false;
-                    let mut should_cancel = false;
-
                     if let Ok(event) = receiver.try_recv() {
                         let is_paused = *app_handle.state::<AppStatus>().is_paused.lock().unwrap();
-                        if !is_paused && event.state == global_hotkey::HotKeyState::Pressed {
+                        let main_id = hotkey_manager_clone.lock().unwrap().main_hotkey_id();
+                        
+                        if !is_paused && event.state == HotKeyState::Pressed {
                             if event.id == main_id {
-                                should_toggle = true;
-                            } else if event.id == cancel_id {
-                                should_cancel = true;
+                                let engine = engine_clone.lock().unwrap();
+                                if engine.is_listening() {
+                                    engine.stop_listening();
+                                } else {
+                                    engine.start_listening();
+                                }
                             }
                         }
                     }
+                    thread::sleep(Duration::from_millis(50));
+                }
+            });
 
-                    if let Ok(_) = stop_rx.try_recv() {
-                        if is_recording {
-                            should_toggle = true;
-                        }
-                    }
-
-                    if should_cancel && is_recording {
-                        is_recording = false;
-                        let _ = hotkey_manager.unregister_cancel();
-                        let _ = app_handle.emit("ListeningStopped", ());
-                        
-                        // Discard recorded audio
-                        let _ = audio_capture.take();
-                        
-                        // Clear/reset recognizer stream
-                        if let Ok(mut recognizer) = whisper_recognizer.lock() {
-                            recognizer.start_stream();
-                        }
-                        
-                        // Hide window
-                        let _ = window.hide();
-                    } else if should_toggle {
-                        is_recording = !is_recording;
-
-                        if is_recording {
-                            // Show overlay BEFORE emitting, but don't steal focus (only if overlay is enabled)
-                            let settings = AppSettings::load();
-                            if settings.overlay_enabled {
-                                let _ = window.show();
-                            }
-                            
-                            let _ = app_handle.emit("ListeningStarted", ());
-                            partial_display_text.clear();
-                            last_partial_time = std::time::Instant::now();
-                            let mut recognizer = whisper_recognizer.lock().unwrap();
-                            recognizer.start_stream();
-                            
-                            // Dynamically register Escape as cancel hotkey during recording
-                            let _ = hotkey_manager.register_cancel();
-                            
-                            match AudioCapture::new() {
-                                Ok(capture) => {
-                                    audio_capture = Some(capture);
+            // Event Subscriber Thread
+            let app_handle = app.handle().clone();
+            thread::spawn(move || {
+                let mut injector = get_injector().expect("Failed to initialize text injector");
+                
+                loop {
+                    if let Ok(event) = event_receiver.recv() {
+                        match event {
+                            VoiceFlowEvent::ListeningStarted => {
+                                let settings = AppSettings::load();
+                                if settings.overlay_enabled {
+                                    let _ = window.show();
                                 }
-                                Err(e) => {
-                                    let _ = app_handle.emit("ErrorOccurred", format!("Mic error: {}", e));
-                                    let _ = hotkey_manager.unregister_cancel();
-                                    is_recording = false;
-                                }
+                                let _ = app_handle.emit("ListeningStarted", ());
                             }
-                        } else {
-                            let _ = app_handle.emit("ListeningStopped", ());
-                            let _ = hotkey_manager.unregister_cancel();
-                            
-                            if let Some(mut capture) = audio_capture.take() {
-                                let audio_data = capture.read_audio();
+                            VoiceFlowEvent::ListeningStopped => {
+                                let _ = app_handle.emit("ListeningStopped", ());
+                                let _ = window.hide();
+                            }
+                            VoiceFlowEvent::PartialTranscript(text) => {
+                                let _ = app_handle.emit("PartialTranscript", text);
+                            }
+                            VoiceFlowEvent::FinalTranscript(text) => {
+                                let _ = app_handle.emit("FinalTranscript", text.clone());
                                 
-                                let mut recognizer = whisper_recognizer.lock().unwrap();
-                                recognizer.process_audio(&audio_data);
-                                let mut text = recognizer.final_result();
-                                eprintln!("[DEBUG] raw whisper output: {:?}", text);
+                                // Hide overlay to restore focus to underlying window
+                                let _ = window.hide();
+                                thread::sleep(Duration::from_millis(300));
                                 
-                                if !text.is_empty() {
-                                    text = vocab_engine.apply(&text);
-                                    text = format_engine.apply(&text);
-                                    eprintln!("[DEBUG] formatted text: {:?}", text);
-                                    
-                                    let _ = app_handle.emit("FinalTranscript", text.clone());
-                                    
-                                    let _ = app_handle.emit("InjectionStarted", ());
-                                    
-                                    // Small delay so the UI can hide first, restoring focus
-                                    thread::sleep(Duration::from_millis(300));
-                                    
-                                    let settings = AppSettings::load();
-                                    match injector.inject(&text) {
-                                        Ok(_) => {
-                                            let _ = app_handle.emit("InjectionCompleted", ());
-                                        }
-                                        Err(e) => {
-                                            eprintln!("[DEBUG] injection failed: {:?}", e);
-                                            if settings.clipboard_fallback {
-                                                match voiceflow_core::injection::copy_to_clipboard(&text) {
-                                                    Ok(_) => {
-                                                        let _ = app_handle.emit(
-                                                            "ErrorOccurred",
-                                                            "Copied to clipboard (No focus / Perm missing)".to_string()
-                                                        );
-                                                    }
-                                                    Err(copy_err) => {
-                                                        let _ = app_handle.emit(
-                                                            "ErrorOccurred",
-                                                            format!("Injection failed. Clipboard error: {}", copy_err)
-                                                        );
-                                                    }
-                                                }
-                                            } else {
-                                                let _ = app_handle.emit("ErrorOccurred", format!("Injection failed: {}", e));
-                                            }
+                                let settings = AppSettings::load();
+                                if settings.auto_paste {
+                                    if let Err(e) = injector.inject(&text) {
+                                        eprintln!("Injection failed: {}", e);
+                                        if settings.clipboard_fallback {
+                                            let _ = voiceflow_desktop_text_injection::copy_to_clipboard(&text);
                                         }
                                     }
                                 } else {
-                                    let _ = app_handle.emit("ErrorOccurred", "No speech detected");
-                                }
-                                
-                                // Hide overlay after injection
-                                thread::sleep(Duration::from_millis(1500));
-                                let _ = window.hide();
-                            }
-                        }
-                    }
-
-                    if is_recording {
-                        if let Some(capture) = audio_capture.as_mut() {
-                            let new_audio = capture.read_audio();
-                            if !new_audio.is_empty() {
-                                let mut recognizer = whisper_recognizer.lock().unwrap();
-                                recognizer.process_audio(&new_audio);
-                            }
-                        }
-
-                        // 3 seconds gives Whisper enough context to produce real words
-                        if last_partial_time.elapsed() >= Duration::from_millis(3000) {
-                            last_partial_time = std::time::Instant::now();
-                            let mut recognizer = whisper_recognizer.lock().unwrap();
-                            if let Some(chunk_text) = recognizer.partial_result() {
-                                if !chunk_text.is_empty() {
-                                    if !partial_display_text.is_empty() {
-                                        partial_display_text.push(' ');
+                                    if settings.clipboard_fallback {
+                                        let _ = voiceflow_desktop_text_injection::copy_to_clipboard(&text);
                                     }
-                                    partial_display_text.push_str(&chunk_text);
-                                    let _ = app_handle.emit("PartialTranscript", partial_display_text.clone());
                                 }
+                            }
+                            VoiceFlowEvent::Error(err) => {
+                                let _ = app_handle.emit("ErrorOccurred", err.clone());
+                                if AppSettings::load().show_notifications {
+                                    let _ = app_handle.notification().builder().title("VoiceFlow Error").body(&err).show();
+                                }
+                            }
+                            VoiceFlowEvent::EngineInitializing => {
+                                println!("Initializing VoiceFlow Engine...");
+                                let _ = app_handle.emit("EngineInitializing", ());
+                            }
+                            VoiceFlowEvent::ModelDownloadStarted => {
+                                println!("Model download started");
+                                let _ = app_handle.emit("ModelDownloadStarted", ());
+                                if AppSettings::load().show_notifications {
+                                    let _ = app_handle.notification().builder()
+                                        .title("VoiceFlow")
+                                        .body("Downloading the latest AI dictation model. We'll be ready in a few seconds...")
+                                        .show();
+                                }
+                            }
+                            VoiceFlowEvent::ModelDownloading(percent) => {
+                                println!("Downloading model: {}%", percent);
+                                let _ = app_handle.emit("ModelDownloading", percent);
+                            }
+                            VoiceFlowEvent::ModelDownloadComplete => {
+                                println!("Model download complete!");
+                                let _ = app_handle.emit("ModelDownloadComplete", ());
+                            }
+                            VoiceFlowEvent::ModelLoading => {
+                                println!("Loading Whisper Model into memory...");
+                                let _ = app_handle.emit("ModelLoading", ());
+                            }
+                            VoiceFlowEvent::EngineReady => {
+                                println!("VoiceFlow Engine is fully READY!");
+                                let _ = app_handle.emit("EngineReady", ());
+                                if AppSettings::load().show_notifications {
+                                    let _ = app_handle.notification().builder().title("VoiceFlow").body("Dictation engine is ready to use!").show();
+                                }
+                            }
+                            VoiceFlowEvent::EngineNotReady => {
+                                eprintln!("Dictation blocked: Engine is not ready yet!");
+                                let _ = app_handle.emit("EngineNotReady", ());
                             }
                         }
                     }
-
-                    thread::sleep(Duration::from_millis(20));
                 }
             });
-            
+
             Ok(())
         })
         .run(tauri::generate_context!())

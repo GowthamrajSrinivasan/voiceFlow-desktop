@@ -1,0 +1,7 @@
+[package]
+name = "voiceflow-desktop-hotkeys"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+global-hotkey = "0.8.0"

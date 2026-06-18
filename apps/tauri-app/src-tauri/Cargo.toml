@@ -24,4 +24,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 voiceflow-core = { version = "0.1.0", path = "../../../../voiceflow-core/crates/voiceflow-core" }
 voiceflow-shared = { version = "0.1.0", path = "../../../../voiceflow-core/crates/voiceflow-shared" }
-global-hotkey = "0.8.0"
+voiceflow-desktop-hotkeys = { path = "../../../crates/hotkeys" }
+voiceflow-desktop-text-injection = { path = "../../../crates/text-injection" }
+tauri-plugin-autostart = "2.5.1"
+tauri-plugin-notification = "2.3.3"

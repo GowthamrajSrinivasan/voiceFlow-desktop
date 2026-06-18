@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "apps/tauri-app/src-tauri",
+    "apps/tauri-app/src-tauri", "crates/hotkeys", "crates/text-injection",
     "crates/voiceflow-desktop"
 ]
 resolver = "2"

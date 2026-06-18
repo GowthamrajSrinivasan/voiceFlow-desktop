@@ -1,0 +1,25 @@
+# Rust
+target/
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Models (handled by separate ignore files but good to have here)
+build-assets/models/*.bin

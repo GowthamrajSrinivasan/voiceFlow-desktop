@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-voiceflow-shared = { path = "../../../voiceflow-core/crates/voiceflow-shared" }
-voiceflow-core = { path = "../../../voiceflow-core/crates/voiceflow-core" }
+voiceflow-shared = { path = "../../../voiceflow-dev/voiceflow-core/crates/voiceflow-shared" }
+voiceflow-core = { path = "../../../voiceflow-dev/voiceflow-core/crates/voiceflow-core" }

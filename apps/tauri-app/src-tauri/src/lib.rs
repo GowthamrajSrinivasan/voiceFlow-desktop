@@ -8,7 +8,7 @@ use voiceflow_shared::config::settings::AppSettings;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
 
-use voiceflow_core::{VoiceFlow, RuntimeProfile, VoiceFlowEvent};
+use voiceflow_core::{VoiceFlow, VoiceFlowEvent};
 use voiceflow_desktop_hotkeys::{VoiceFlowHotKeyManager, GlobalHotKeyEvent, HotKeyState};
 use voiceflow_desktop_text_injection::get_injector;
 
@@ -122,11 +122,11 @@ pub fn run() {
 
             // Core Engine setup
             #[cfg(target_os = "macos")]
-            let profile = RuntimeProfile::DesktopMac;
+            let profile = voiceflow_core::runtime::RuntimeProfile::DesktopMac;
             #[cfg(target_os = "windows")]
-            let profile = RuntimeProfile::DesktopWindows;
+            let profile = voiceflow_core::runtime::RuntimeProfile::DesktopWindows;
             #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-            let profile = RuntimeProfile::DesktopMac; // fallback
+            let profile = voiceflow_core::runtime::RuntimeProfile::DesktopMac; // fallback
 
             let mut engine = VoiceFlow::new(profile);
             let event_receiver = engine.subscribe();
@@ -136,7 +136,7 @@ pub fn run() {
             let engine_clone = Arc::clone(&engine);
 
             // Trigger the background model prefetch 5s after startup
-            engine.lock().unwrap().prefetch_model();
+            // engine.lock().unwrap().prefetch_model();
 
             // Hotkey Receiver Thread
             let receiver = GlobalHotKeyEvent::receiver();

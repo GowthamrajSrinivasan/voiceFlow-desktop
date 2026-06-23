@@ -136,7 +136,7 @@ pub fn run() {
             let engine_clone = Arc::clone(&engine);
 
             // Trigger the background model prefetch 5s after startup
-            // engine.lock().unwrap().prefetch_model();
+            engine.lock().unwrap().prefetch_model();
 
             // Hotkey Receiver Thread
             let receiver = GlobalHotKeyEvent::receiver();

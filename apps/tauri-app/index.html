@@ -123,12 +123,44 @@
         
         <!-- Vocabulary Tab -->
         <div class="tab-content" id="vocabulary-tab">
-          <div class="stat-box">
-            <div class="settings-label">
-              <span class="settings-title">Custom Vocabulary Terms</span>
-              <span class="settings-desc">Vocabulary management panel (coming in Phase 3)</span>
+          <div class="settings-card vocabulary-card">
+            <div class="vocab-header">
+              <div class="settings-label">
+                <span class="settings-title">Custom Vocabulary Mappings</span>
+                <span class="settings-desc">Define custom word replacements for the formatting engine.</span>
+              </div>
+              <div class="vocab-actions">
+                <button class="btn-secondary" id="import-vocab-btn">Import JSON</button>
+                <button class="btn-secondary" id="export-vocab-btn">Export JSON</button>
+                <input type="file" id="vocab-file-input" accept=".json" style="display: none;">
+              </div>
             </div>
-            <span class="stat-value" id="vocab-count-val">0</span>
+
+            <div class="vocab-table-container">
+              <table class="vocab-table" id="vocab-table">
+                <thead>
+                  <tr>
+                    <th>Spoken Phrase</th>
+                    <th>Output</th>
+                    <th>Case Sensitive</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vocab-tbody">
+                  <!-- Rows injected by TS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="vocab-add-row">
+              <input type="text" id="new-vocab-spoken" placeholder="Spoken (e.g. petrosigns)">
+              <input type="text" id="new-vocab-output" placeholder="Output (e.g. PetroSigns)">
+              <label class="checkbox-label">
+                <input type="checkbox" id="new-vocab-case"> Match Case
+              </label>
+              <button class="btn-primary" id="add-vocab-btn">Add</button>
+            </div>
+            <div id="vocab-error-msg" class="vocab-error-msg"></div>
           </div>
         </div>
       </div>

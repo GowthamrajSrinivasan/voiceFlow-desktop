@@ -20,6 +20,8 @@ struct AppStatus {
     pub is_paused: Mutex<bool>,
 }
 
+use voiceflow_shared::config::vocabulary::UserVocabulary;
+
 #[tauri::command]
 fn stop_listening(stop_tx: tauri::State<std::sync::mpsc::Sender<()>>) {
     let _ = stop_tx.send(());
@@ -52,13 +54,36 @@ fn save_settings(settings: AppSettings, app_handle: tauri::AppHandle) -> Result<
     Ok(())
 }
 
+#[tauri::command]
+fn get_vocabulary() -> UserVocabulary {
+    UserVocabulary::load()
+}
+
+#[tauri::command]
+fn save_vocabulary(vocab: UserVocabulary, app_handle: tauri::AppHandle) -> Result<(), String> {
+    vocab.save().map_err(|e| e.to_string())?;
+    
+    // Update the formatter context cached in the engine
+    let engine = app_handle.state::<Arc<Mutex<VoiceFlow>>>();
+    let mode = voiceflow_core::pipeline::request::FormattingMode::Smart;
+    let context = voiceflow_core::pipeline::context::FormatterContext::new(mode, Some(vocab.clone()));
+    engine.lock().unwrap().set_formatter_context(context);
+
+    // Update vocabulary count in settings
+    let mut settings = AppSettings::load();
+    settings.vocabulary_count = vocab.entries.len() as u32;
+    let _ = settings.save();
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--silently"])))
         .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![stop_listening, get_settings, save_settings])
+        .invoke_handler(tauri::generate_handler![stop_listening, get_settings, save_settings, get_vocabulary, save_vocabulary])
         .setup(|app| {
             let app_handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("no main window");
@@ -129,10 +154,21 @@ pub fn run() {
             let profile = voiceflow_core::runtime::RuntimeProfile::DesktopMac; // fallback
 
             let mut engine = VoiceFlow::new(profile);
+            
+            // Load initial vocabulary and set it
+            let vocab = UserVocabulary::load();
+            let context = voiceflow_core::pipeline::context::FormatterContext::new(
+                voiceflow_core::pipeline::request::FormattingMode::Smart,
+                Some(vocab)
+            );
+            engine.set_formatter_context(context);
+
             let event_receiver = engine.subscribe();
 
             // Store engine behind arc mutex if we need to call it from other threads
             let engine = Arc::new(Mutex::new(engine));
+            app.manage(Arc::clone(&engine)); // Store in Tauri state
+
             let engine_clone = Arc::clone(&engine);
 
             // Trigger the background model prefetch 5s after startup

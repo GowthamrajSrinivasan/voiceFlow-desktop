@@ -25,10 +25,28 @@ async function init() {
 
     setupTabs();
     await loadSettings();
+    await loadVocabulary();
 
     const saveBtn = document.querySelector("#save-btn");
     if (saveBtn) {
-        saveBtn.addEventListener("click", saveSettings);
+        saveBtn.addEventListener("click", async () => {
+            await saveSettings();
+            await saveVocabulary();
+            showSaveStatus("✓ Settings & Vocabulary saved successfully");
+        });
+    }
+
+    const addVocabBtn = document.querySelector("#add-vocab-btn");
+    if (addVocabBtn) addVocabBtn.addEventListener("click", handleAddVocab);
+
+    const exportVocabBtn = document.querySelector("#export-vocab-btn");
+    if (exportVocabBtn) exportVocabBtn.addEventListener("click", handleExportVocab);
+
+    const importVocabBtn = document.querySelector("#import-vocab-btn");
+    const fileInput = document.querySelector("#vocab-file-input") as HTMLInputElement;
+    if (importVocabBtn && fileInput) {
+        importVocabBtn.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", handleImportVocab);
     }
 }
 
@@ -143,4 +161,160 @@ function showSaveStatus(msg: string) {
             statusEl.classList.remove("show");
         }, 2500);
     }
+}
+
+// --- Vocabulary Logic ---
+
+interface VocabularyEntry {
+    spoken: string;
+    output: string;
+    language: string;
+    enabled: boolean;
+    case_sensitive: boolean;
+}
+
+interface UserVocabulary {
+    entries: VocabularyEntry[];
+}
+
+let currentVocab: UserVocabulary = { entries: [] };
+
+async function loadVocabulary() {
+    try {
+        currentVocab = await invoke<UserVocabulary>("get_vocabulary");
+        renderVocabTable();
+    } catch (err) {
+        console.error("Failed to load vocabulary:", err);
+    }
+}
+
+function renderVocabTable() {
+    const tbody = document.querySelector("#vocab-tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    currentVocab.entries.forEach((entry, index) => {
+        const tr = document.createElement("tr");
+        
+        const tdSpoken = document.createElement("td");
+        tdSpoken.textContent = entry.spoken;
+        
+        const tdOutput = document.createElement("td");
+        tdOutput.textContent = entry.output;
+        
+        const tdCase = document.createElement("td");
+        tdCase.textContent = entry.case_sensitive ? "Yes" : "No";
+
+        const tdActions = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-secondary btn-sm";
+        delBtn.textContent = "Remove";
+        delBtn.onclick = () => {
+            currentVocab.entries.splice(index, 1);
+            renderVocabTable();
+        };
+        tdActions.appendChild(delBtn);
+
+        tr.appendChild(tdSpoken);
+        tr.appendChild(tdOutput);
+        tr.appendChild(tdCase);
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+    });
+}
+
+function handleAddVocab() {
+    const spokenInput = document.querySelector("#new-vocab-spoken") as HTMLInputElement;
+    const outputInput = document.querySelector("#new-vocab-output") as HTMLInputElement;
+    const caseInput = document.querySelector("#new-vocab-case") as HTMLInputElement;
+    const errorMsg = document.querySelector("#vocab-error-msg") as HTMLElement;
+
+    errorMsg.textContent = "";
+
+    let spoken = spokenInput.value.trim().toLowerCase();
+    spoken = spoken.replace(/\s+/g, " "); // normalize whitespace
+
+    const output = outputInput.value.trim();
+    const caseSensitive = caseInput.checked;
+
+    if (!spoken || !output) {
+        errorMsg.textContent = "Spoken phrase and output cannot be empty.";
+        return;
+    }
+    
+    if (spoken === output.toLowerCase()) {
+        errorMsg.textContent = "Spoken phrase and output are the same.";
+        return;
+    }
+
+    if (currentVocab.entries.some(e => e.spoken === spoken && e.case_sensitive === caseSensitive)) {
+        errorMsg.textContent = "This exact mapping already exists.";
+        return;
+    }
+
+    currentVocab.entries.push({
+        spoken,
+        output,
+        language: "en",
+        enabled: true,
+        case_sensitive: caseSensitive
+    });
+
+    spokenInput.value = "";
+    outputInput.value = "";
+    caseInput.checked = false;
+
+    renderVocabTable();
+}
+
+async function saveVocabulary() {
+    try {
+        await invoke("save_vocabulary", { vocab: currentVocab });
+    } catch (err) {
+        console.error("Failed to save vocabulary:", err);
+        throw err;
+    }
+}
+
+function handleExportVocab() {
+    const json = JSON.stringify(currentVocab, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "voiceflow_vocabulary.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function handleImportVocab(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) return;
+
+    const file = target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const result = event.target?.result as string;
+            const imported = JSON.parse(result) as UserVocabulary;
+            if (imported && Array.isArray(imported.entries)) {
+                let added = 0;
+                for (const entry of imported.entries) {
+                    if (!currentVocab.entries.some(e => e.spoken === entry.spoken && e.case_sensitive === entry.case_sensitive)) {
+                        currentVocab.entries.push(entry);
+                        added++;
+                    }
+                }
+                renderVocabTable();
+                alert(`Successfully imported ${added} new mappings.`);
+            } else {
+                alert("Invalid vocabulary file format.");
+            }
+        } catch (err) {
+            alert("Failed to parse JSON file.");
+            console.error(err);
+        }
+        target.value = "";
+    };
+    reader.readAsText(file);
 }
